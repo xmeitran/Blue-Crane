@@ -1,0 +1,74 @@
+name: bcl
+
+x-wp-volumes: &wp-volumes
+  - wp_data:/var/www/html
+  - ./wp-content/themes/bcl:/var/www/html/wp-content/themes/bcl
+  - ./wp-content/plugins/bcl-core:/var/www/html/wp-content/plugins/bcl-core
+  - ./seed:/seed:ro
+
+x-wp-env: &wp-env
+  WORDPRESS_DB_HOST: db
+  WORDPRESS_DB_NAME: ${DB_NAME:-bcl}
+  WORDPRESS_DB_USER: ${DB_USER:-bcl}
+  WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+  WORDPRESS_CONFIG_EXTRA: |
+    define('DISALLOW_FILE_EDIT', true);
+    define('WP_ENVIRONMENT_TYPE', getenv('WP_ENVIRONMENT_TYPE') ?: 'local');
+    define('BCL_SMTP_HOST', getenv('BCL_SMTP_HOST') ?: '');
+    define('BCL_SMTP_PORT', (int) (getenv('BCL_SMTP_PORT') ?: 25));
+    define('BCL_SMTP_USER', getenv('BCL_SMTP_USER') ?: '');
+    define('BCL_SMTP_PASS', getenv('BCL_SMTP_PASS') ?: '');
+    define('BCL_SMTP_SECURE', getenv('BCL_SMTP_SECURE') ?: '');
+  BCL_SMTP_HOST: mailpit
+  BCL_SMTP_PORT: "1025"
+
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-bcl}
+      MARIADB_USER: ${DB_USER:-bcl}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 20
+
+  wordpress:
+    image: wordpress:php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:${WP_PORT:-8090}:80"
+    environment: *wp-env
+    volumes:
+      - wp_data:/var/www/html
+      - ./wp-content/themes/bcl:/var/www/html/wp-content/themes/bcl
+      - ./wp-content/plugins/bcl-core:/var/www/html/wp-content/plugins/bcl-core
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/bcl.ini:ro
+
+  cli:
+    image: wordpress:cli-php8.3
+    profiles: ["cli"]
+    user: "33:33"
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      <<: *wp-env
+      HOME: /tmp
+    volumes: *wp-volumes
+
+  mailpit:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAIL_UI_PORT:-8025}:8025"
+
+volumes:
+  db_data:
+  wp_data:
