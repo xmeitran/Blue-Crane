@@ -54,6 +54,13 @@ FILE=$(wp eval 'echo (get_posts(["post_type"=>"bcl_rfq","numberposts"=>1])[0] ??
 check "attachment stored with random name" '[ -n "$FILE" ]'
 check "attachment not reachable from the web (403)" '[ "$(curl -s -o /dev/null -w "%{http_code}" "$BASE/wp-content/uploads/bcl-rfq/$FILE")" = 403 ]'
 
+RFQ_ID=$(wp post list --post_type=bcl_rfq --field=ID --posts_per_page=1)
+curl -s -c "$TMP/a" -b "$TMP/a" -o /dev/null "$BASE/wp-login.php"
+curl -s -c "$TMP/a" -b "$TMP/a" -o /dev/null --data-urlencode "log=$ADMIN_USER" --data-urlencode "pwd=$ADMIN_PASSWORD" -d 'wp-submit=1&testcookie=1' "$BASE/wp-login.php"
+DL=$(curl -s -b "$TMP/a" "$BASE/wp-admin/post.php?post=$RFQ_ID&action=edit" | grep -o 'admin-post.php?action=bcl_rfq_file[^"]*' | head -1 | python3 -I -c "import html,sys; print(html.unescape(sys.stdin.read().strip()))")
+check "admin downloads the attachment" '[ "$(curl -s -b "$TMP/a" "$BASE/wp-admin/$DL" | head -c 5)" = "%PDF-" ]'
+check "anonymous download blocked" '[ "$(curl -s -o /dev/null -w "%{http_code}" "$BASE/wp-admin/$DL")" != 200 ]'
+
 fetch_form
 post -F "rfq_files[]=@$TMP/invoice.pdf;type=application/pdf"
 check "submitted too fast → rejected" 'grep -q "rfq__alert" "$TMP/r.html" && ! grep -qi "^location:" "$TMP/h.txt"'

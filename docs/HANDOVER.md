@@ -70,7 +70,7 @@ Yêu cầu: PHP ≥ 8.1, MySQL/MariaDB, HTTPS (Let’s Encrypt), Apache hoặc N
 
 ```bash
 ./bin/setup.sh      # cài WordPress + Polylang + theme/plugin + nội dung 3 ngôn ngữ
-./bin/test.sh       # 32 kiểm thử: trang, SEO, RFQ (hợp lệ, spam, file giả), email, chặn tệp
+./bin/test.sh       # 34 kiểm thử: trang, SEO, RFQ (hợp lệ, spam, file giả), email, chặn tệp
 ./bin/export-static.sh  # xuất bản demo tĩnh (GitHub Pages) để khách duyệt giao diện
 ```
 Website `http://localhost:8090` · Admin `/wp-admin` (tài khoản trong `.env`) · Hộp thư test `http://localhost:8025`.
