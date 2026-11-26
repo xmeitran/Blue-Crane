@@ -16,6 +16,8 @@ wget --mirror --page-requisites --adjust-extension --no-host-directories -e robo
   "$SRC/" "$SRC/en/" "$SRC/zh/" || [ $? -eq 8 ]
 curl -s "$SRC/khong-ton-tai/" > "$OUT/404.html"
 
+# Query-string pages (?p=84 shortlinks…) are duplicates — drop them, or stripping "?…" would overwrite index.html.
+find "$OUT" -name '*\?*.html' -delete
 # style.css?ver=123.css → style.css (static hosts ignore the query string)
 find "$OUT" -name '*\?*' -print0 | while IFS= read -r -d '' f; do mv "$f" "${f%%\?*}"; done
 touch "$OUT/.nojekyll"

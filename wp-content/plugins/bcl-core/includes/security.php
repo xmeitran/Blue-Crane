@@ -8,6 +8,9 @@ defined( 'ABSPATH' ) || exit;
 remove_action( 'wp_head', 'wp_generator' );
 remove_action( 'wp_head', 'wlwmanifest_link' );
 remove_action( 'wp_head', 'rsd_link' );
+remove_action( 'wp_head', 'wp_shortlink_wp_head' );          // ?p=123 duplicates
+remove_action( 'wp_head', 'wp_oembed_add_discovery_links' );
+remove_action( 'wp_head', 'rest_output_link_wp_head' );       // REST API itself stays on (block editor)
 add_filter( 'xmlrpc_enabled', '__return_false' );
 add_filter( 'login_errors', static fn() => 'Thông tin đăng nhập không đúng.' );
 
